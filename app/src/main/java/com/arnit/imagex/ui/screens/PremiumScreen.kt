@@ -65,9 +65,11 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val cashfreeConfigured = BuildConfig.CASHFREE_BACKEND_URL.isNotBlank()
     val cashfreeClient = remember { CashfreeBackendClient(BuildConfig.CASHFREE_BACKEND_URL) }
+    var cashfreePlans by remember { mutableStateOf(emptyList<CashfreeBackendClient.CashfreePlan>()) }
     LaunchedEffect(cashfreeConfigured) {
         if (cashfreeConfigured && FirebaseAuth.getInstance().currentUser != null) {
             try {
+                cashfreePlans = cashfreeClient.plans()
                 val status = cashfreeClient.premiumStatus()
                 vm.updateCashfreePremiumStatus(status.premium, status.plan)
             } catch (_: Exception) { /* Keep local billing state; status can be retried. */ }
@@ -196,7 +198,7 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            PlansSection(billingState, vm, selectedPayment == PremiumPaymentMethod.CASHFREE, cashfreeConfigured, startCashfree)
+            PlansSection(billingState, vm, selectedPayment == PremiumPaymentMethod.CASHFREE, cashfreeConfigured, cashfreePlans, startCashfree)
         }
 
         cashfreeMessage?.let { message -> InfoBanner(message) }
@@ -238,33 +240,60 @@ private fun PremiumRow(title: String, description: String) {
 }
 
 @Composable
-private fun PlansSection(billingState: BillingState, vm: AppViewModel, showCashfree: Boolean, cashfreeEnabled: Boolean, onCashfreePay: (PlanId) -> Unit) {
+private fun PlansSection(
+    billingState: BillingState,
+    vm: AppViewModel,
+    showCashfree: Boolean,
+    cashfreeEnabled: Boolean,
+    cashfreePlans: List<CashfreeBackendClient.CashfreePlan>,
+    onCashfreePay: (PlanId) -> Unit
+) {
     SectionCard(title = "Plans") {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            billingState.products.forEach { product ->
-                PlanCard(
-                    planName = product.plan.displayName,
-                    priceText = product.priceText,
-                    description = product.description,
-                    enabled = billingState.testMode,
-                    onBuy = { vm.purchase(product.plan) }
-                )
-                if (showCashfree) {
-                    OutlinedButton(onClick = { onCashfreePay(product.plan) }, enabled = cashfreeEnabled, modifier = Modifier.fillMaxWidth()) {
-                        Text("Pay with Cashfree")
+            if (showCashfree) {
+                if (cashfreePlans.isEmpty()) {
+                    Text("Cashfree plans are unavailable. Sign in and check the sandbox backend configuration.")
+                } else {
+                    cashfreePlans.forEach { plan ->
+                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(plan.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                Text(plan.priceText, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                            }
+                            Text(plan.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            OutlinedButton(
+                                onClick = { onCashfreePay(when(plan.id) {
+                                    "monthly" -> PlanId.Monthly
+                                    "yearly" -> PlanId.Yearly
+                                    "lifetime" -> PlanId.Lifetime
+                                    else -> PlanId.Free
+                                }) },
+                                enabled = cashfreeEnabled && plan.id in setOf("monthly", "yearly", "lifetime"),
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("Pay with Cashfree Sandbox") }
+                        }
                     }
                 }
+                Text("Sandbox testing only. Premium activates only after server-side payment verification.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                billingState.products.forEach { product ->
+                    PlanCard(
+                        planName = product.plan.displayName,
+                        priceText = product.priceText,
+                        description = product.description,
+                        enabled = billingState.testMode,
+                        onBuy = { vm.purchase(product.plan) }
+                    )
+                }
+                if (!billingState.testMode) {
+                    WarningBanner(
+                        "Google Play Billing is not configured. Test-mode purchases are separate and never represent real payments."
+                    )
+                }
+                OutlinedButton(onClick = { vm.restorePurchases() }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Restore Purchases")
+                }
             }
-            if (!billingState.testMode) {
-                WarningBanner(
-                    "Payment is not configured for this build. Purchase buttons are disabled; " +
-                        "the test-mode toggle lives in Settings and never fakes a real purchase."
-                )
-            }
-            OutlinedButton(
-                onClick = { vm.restorePurchases() },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Restore Purchases") }
         }
     }
 }
