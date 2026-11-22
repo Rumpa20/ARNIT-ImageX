@@ -65,6 +65,14 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val cashfreeConfigured = BuildConfig.CASHFREE_BACKEND_URL.isNotBlank()
     val cashfreeClient = remember { CashfreeBackendClient(BuildConfig.CASHFREE_BACKEND_URL) }
+    LaunchedEffect(cashfreeConfigured) {
+        if (cashfreeConfigured && FirebaseAuth.getInstance().currentUser != null) {
+            try {
+                val status = cashfreeClient.premiumStatus()
+                vm.updateCashfreePremiumStatus(status.premium, status.plan)
+            } catch (_: Exception) { /* Keep local billing state; status can be retried. */ }
+        }
+    }
     val checkoutLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val orderId = result.data?.getStringExtra(CashfreeCheckoutActivity.EXTRA_ORDER_ID)
         if (result.resultCode == Activity.RESULT_OK && !orderId.isNullOrBlank()) {
@@ -73,7 +81,7 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
                 try {
                     val verified = cashfreeClient.verifyOrder(orderId)
                     if (verified.premiumUnlocked) {
-                        vm.activateVerifiedCashfreePremium(verified.plan)
+                        vm.updateCashfreePremiumStatus(true, verified.plan)
                         cashfreeMessage = "Payment verified by server. Premium activated for this session."
                     } else {
                         cashfreeMessage = "Payment status: ${verified.status}. Premium is not activated yet."
@@ -183,7 +191,7 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
                     cashfreeAvailable = cashfreeConfigured
                 )
                 Text(
-                    "Google Play Billing and Cashfree checkout are not connected yet. Payment options are shown for the upcoming integration.",
+                    "Google Play Billing is not connected. Cashfree checkout is available only when this build has a configured backend URL.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
