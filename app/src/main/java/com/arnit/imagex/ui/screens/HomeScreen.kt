@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.StackedLineChart
 import androidx.compose.material3.Icon
@@ -49,6 +50,7 @@ fun HomeScreen(
     onHistory: () -> Unit,
     onFormats: () -> Unit,
     onPremium: () -> Unit,
+    onAccount: () -> Unit,
     onSettings: () -> Unit
 ) {
     val isPremium by vm.isPremium.collectAsState()
@@ -102,6 +104,12 @@ fun HomeScreen(
                 onClick = onPremium
             )
         }
+        HomeTile(
+            icon = Icons.Filled.AccountCircle,
+            title = "Account",
+            subtitle = "Sign in or create an account",
+            onClick = onAccount
+        )
         HomeTile(
             icon = Icons.Filled.Settings,
             title = "Settings",
