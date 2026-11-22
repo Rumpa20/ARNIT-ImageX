@@ -175,7 +175,8 @@ class ConversionEngine(
     }
 
     private fun readSource(source: SourceInfo, onProgress: (Int, Long, Long) -> Unit): ByteArray {
-        val out = ByteArrayOutputStream(maxOf(source.declaredSizeBytes.toInt(), 64 * 1024))
+        val initialCapacity = source.declaredSizeBytes.coerceAtLeast(0L).coerceAtMost(8L * 1024 * 1024).toInt()
+        val out = ByteArrayOutputStream(maxOf(initialCapacity, 64 * 1024))
         val buffer = ByteArray(128 * 1024)
         var total = 0L
         val stream = try {
@@ -215,7 +216,7 @@ class ConversionEngine(
         return when {
             !settings.keepAspect -> (if (w > 0) w else decoded.width) to (if (h > 0) h else decoded.height)
             w > 0 && h > 0 -> {
-                val scale = max(w.toDouble() / decoded.width, h.toDouble() / decoded.height)
+                val scale = minOf(w.toDouble() / decoded.width, h.toDouble() / decoded.height)
                 (decoded.width * scale).toInt().coerceAtLeast(1) to
                     (decoded.height * scale).toInt().coerceAtLeast(1)
             }
