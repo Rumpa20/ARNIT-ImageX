@@ -33,7 +33,12 @@ if(($evt['type']??'')==='PAYMENT_SUCCESS_WEBHOOK'){
    $pid=(string)($validPayment['cf_payment_id']??'');
    $pdo->beginTransaction();
    try{
-    $pdo->prepare('UPDATE orders SET status="PAID",payment_id=?,expires_at=? WHERE order_id=? AND status<>"PAID"')->execute([$pid,$expiry,$orderId]);
+    $updated=$pdo->prepare('UPDATE orders SET status="PAID",payment_id=?,expires_at=? WHERE order_id=? AND status<>"PAID"');
+    $updated->execute([$pid,$expiry,$orderId]);
+    if($updated->rowCount()!==1){
+     $pdo->rollBack();
+     out(200,['received'=>true,'already_processed'=>true]);
+    }
     $pdo->prepare('INSERT INTO entitlements(user_id,plan,expires_at,updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET plan=excluded.plan,expires_at=excluded.expires_at,updated_at=excluded.updated_at')->execute([$o['user_id'],$o['plan'],$expiry,gmdate('c')]);
     $pdo->commit();
    }catch(Throwable $e){
