@@ -134,17 +134,17 @@ private fun HeroCard(isTestMode: Boolean, onConvert: () -> Unit) {
             .padding(24.dp)
     ) {
         Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(100.dp)
                         .background(Color.White.copy(alpha = 0.18f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
                         painter = painterResource(R.drawable.ic_imagex_logo),
                         contentDescription = "ARNIT ImageX logo",
-                        modifier = Modifier.size(58.dp),
+                        modifier = Modifier.size(92.dp),
                         contentScale = ContentScale.Fit
                     )
                 }
@@ -152,7 +152,8 @@ private fun HeroCard(isTestMode: Boolean, onConvert: () -> Unit) {
                     if (isTestMode) "Premium (TEST MODE)" else "Universal Image Converter",
                     style = MaterialTheme.typography.titleMedium,
                     color = androidx.compose.ui.graphics.Color.White,
-                    modifier = Modifier.padding(start = 12.dp)
+                    modifier = Modifier.padding(top = 12.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
             }
             Text(
