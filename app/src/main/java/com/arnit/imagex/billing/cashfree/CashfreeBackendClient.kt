@@ -1,6 +1,7 @@
 package com.arnit.imagex.billing.cashfree
 
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -72,7 +73,7 @@ class CashfreeBackendClient(
     }
 
     private suspend fun request(path: String, method: String, body: JSONObject?): JSONObject {
-        val token = auth.currentUser?.getIdToken(false)?.awaitToken()
+        val token = auth.currentUser?.getIdToken(false)?.await()?.token
             ?: throw IllegalStateException("Please sign in before purchasing Premium.")
         if (baseUrl.isBlank()) throw IllegalStateException("Cashfree backend URL is not configured for this build.")
         val normalizedBase = baseUrl.trimEnd('/')
@@ -103,11 +104,3 @@ class CashfreeBackendClient(
     }
 }
 
-private suspend fun com.google.android.gms.tasks.Task<com.google.firebase.auth.GetTokenResult>.awaitToken(): String =
-    kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
-        addOnSuccessListener { result ->
-            if (continuation.isActive) continuation.resume(result.token) {}
-        }.addOnFailureListener { error ->
-            if (continuation.isActive) continuation.resumeWith(Result.failure(error))
-        }
-    }
