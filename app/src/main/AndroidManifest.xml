@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Required for Firebase Authentication and secure payment-backend requests.
+         Image conversion remains local; image bytes are never uploaded by the app. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".ImageXApplication"
         android:allowBackup="false"
