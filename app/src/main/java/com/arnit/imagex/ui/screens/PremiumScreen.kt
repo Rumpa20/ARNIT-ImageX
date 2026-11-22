@@ -108,7 +108,20 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
                 )
             }
 
-            SectionCard(title = "Payment options") {\n                PremiumPaymentMethodSelector(\n                    selected = selectedPayment,\n                    onSelect = { selectedPayment = it },\n                    googlePlayAvailable = false,\n                    cashfreeAvailable = false\n                )\n                Text(\n                    "Google Play Billing and Cashfree checkout are not connected yet. Payment options are shown for the upcoming integration.",\n                    style = MaterialTheme.typography.bodySmall,\n                    color = MaterialTheme.colorScheme.onSurfaceVariant\n                )\n            }\n            PlansSection(billingState, vm)
+            SectionCard(title = "Payment options") {
+                PremiumPaymentMethodSelector(
+                    selected = selectedPayment,
+                    onSelect = { selectedPayment = it },
+                    googlePlayAvailable = false,
+                    cashfreeAvailable = false
+                )
+                Text(
+                    "Google Play Billing and Cashfree checkout are not connected yet. Payment options are shown for the upcoming integration.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            PlansSection(billingState, vm)
         }
 
         billingState.message?.let { message ->
