@@ -18,7 +18,6 @@ android {
         versionName = "1.0.0"
         resourceConfigurations += listOf("en")
         buildConfigField("String", "CASHFREE_BACKEND_URL", "\"${project.findProperty("CASHFREE_BACKEND_URL") ?: ""}\"")
-        buildConfigField("String", "CASHFREE_BACKEND_URL", "\"\"")
     }
 
     buildTypes {
@@ -62,7 +61,6 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.cashfree.pg:api:2.7.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
-    implementation("com.cashfree.pg:api:2.7.1")
 
     val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
     implementation(composeBom)
