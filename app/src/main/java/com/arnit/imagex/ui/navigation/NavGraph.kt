@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.arnit.imagex.ui.AppViewModel
+import com.arnit.imagex.ui.screens.AuthScreen
 import com.arnit.imagex.ui.screens.BatchScreen
 import com.arnit.imagex.ui.screens.ConvertScreen
 import com.arnit.imagex.ui.screens.FormatsScreen
@@ -24,16 +25,13 @@ object Routes {
     const val HISTORY = "history"
     const val PREMIUM = "premium"
     const val SETTINGS = "settings"
+    const val AUTH = "auth"
 }
 
 @Composable
 fun ImageXNavHost(vm: AppViewModel, modifier: Modifier = Modifier) {
     val navController = rememberNavController()
-    NavHost(
-        navController = navController,
-        startDestination = Routes.HOME,
-        modifier = modifier
-    ) {
+    NavHost(navController = navController, startDestination = Routes.HOME, modifier = modifier) {
         composable(Routes.HOME) {
             HomeScreen(
                 vm = vm,
@@ -42,52 +40,32 @@ fun ImageXNavHost(vm: AppViewModel, modifier: Modifier = Modifier) {
                 onHistory = { navController.navigate(Routes.HISTORY) },
                 onFormats = { navController.navigate(Routes.FORMATS) },
                 onPremium = { navController.navigate(Routes.PREMIUM) },
-                onSettings = { navController.navigate(Routes.SETTINGS) }
+                onSettings = { navController.navigate(Routes.SETTINGS) },
+                onAccount = { navController.navigate(Routes.AUTH) }
             )
         }
         composable(Routes.SELECT) {
-            SelectScreen(
-                vm = vm,
-                onBack = { navController.popBackStack() },
+            SelectScreen(vm = vm, onBack = { navController.popBackStack() },
                 onPicked = { navController.navigate(Routes.CONVERT) },
-                onBatchPicked = { navController.navigate(Routes.BATCH) }
-            )
+                onBatchPicked = { navController.navigate(Routes.BATCH) })
         }
         composable(Routes.CONVERT) {
-            ConvertScreen(
-                vm = vm,
-                onBack = { navController.popBackStack() },
+            ConvertScreen(vm = vm, onBack = { navController.popBackStack() },
                 onPickAnother = {
                     vm.resetConversion()
                     vm.clearSource()
                     navController.navigate(Routes.SELECT) { popUpTo(Routes.HOME) }
-                },
-                onUpgrade = { navController.navigate(Routes.PREMIUM) }
-            )
+                }, onUpgrade = { navController.navigate(Routes.PREMIUM) })
         }
         composable(Routes.BATCH) {
-            BatchScreen(
-                vm = vm,
-                onBack = { navController.popBackStack() },
-                onAddImages = {
-                    navController.navigate(Routes.SELECT) {
-                        launchSingleTop = true
-                    }
-                },
-                onUpgrade = { navController.navigate(Routes.PREMIUM) }
-            )
+            BatchScreen(vm = vm, onBack = { navController.popBackStack() },
+                onAddImages = { navController.navigate(Routes.SELECT) { launchSingleTop = true } },
+                onUpgrade = { navController.navigate(Routes.PREMIUM) })
         }
-        composable(Routes.FORMATS) {
-            FormatsScreen(vm = vm, onBack = { navController.popBackStack() })
-        }
-        composable(Routes.HISTORY) {
-            HistoryScreen(vm = vm, onBack = { navController.popBackStack() })
-        }
-        composable(Routes.PREMIUM) {
-            PremiumScreen(vm = vm, onBack = { navController.popBackStack() })
-        }
-        composable(Routes.SETTINGS) {
-            SettingsScreen(vm = vm, onBack = { navController.popBackStack() })
-        }
+        composable(Routes.FORMATS) { FormatsScreen(vm = vm, onBack = { navController.popBackStack() }) }
+        composable(Routes.HISTORY) { HistoryScreen(vm = vm, onBack = { navController.popBackStack() }) }
+        composable(Routes.PREMIUM) { PremiumScreen(vm = vm, onBack = { navController.popBackStack() }) }
+        composable(Routes.SETTINGS) { SettingsScreen(vm = vm, onBack = { navController.popBackStack() }) }
+        composable(Routes.AUTH) { AuthScreen(onBack = { navController.popBackStack() }) }
     }
 }
