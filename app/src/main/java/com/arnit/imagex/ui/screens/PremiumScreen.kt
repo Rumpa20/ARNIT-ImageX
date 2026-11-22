@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -23,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -39,14 +41,79 @@ import com.arnit.imagex.ui.components.WarningBanner
 import com.arnit.imagex.ui.components.PremiumPaymentMethod
 import com.arnit.imagex.ui.components.PremiumPaymentMethodSelector
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.app.Activity
+import android.content.Intent
+import com.google.firebase.auth.FirebaseAuth
+import com.arnit.imagex.BuildConfig
+import com.arnit.imagex.billing.cashfree.CashfreeBackendClient
+import com.arnit.imagex.billing.cashfree.CashfreeCheckoutActivity
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 
 @Composable
 fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
     val isPremium by vm.isPremium.collectAsState()
     val billingState by vm.billingState.collectAsState()
     var selectedPayment by remember { mutableStateOf(PremiumPaymentMethod.GOOGLE_PLAY) }
+    var cashfreeMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val cashfreeConfigured = BuildConfig.CASHFREE_BACKEND_URL.isNotBlank()
+    val cashfreeClient = remember { CashfreeBackendClient(BuildConfig.CASHFREE_BACKEND_URL) }
+    val checkoutLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val orderId = result.data?.getStringExtra(CashfreeCheckoutActivity.EXTRA_ORDER_ID)
+        if (result.resultCode == Activity.RESULT_OK && !orderId.isNullOrBlank()) {
+            scope.launch {
+                cashfreeMessage = "Checking payment securely..."
+                try {
+                    val verified = cashfreeClient.verifyOrder(orderId)
+                    if (verified.premiumUnlocked) {
+                        vm.activateVerifiedCashfreePremium(verified.plan)
+                        cashfreeMessage = "Payment verified by server. Premium activated for this session."
+                    } else {
+                        cashfreeMessage = "Payment status: ${verified.status}. Premium is not activated yet."
+                    }
+                } catch (e: Exception) {
+                    cashfreeMessage = e.message ?: "Payment verification could not be completed. Premium remains locked."
+                }
+            }
+        } else if (result.resultCode != Activity.RESULT_OK) {
+            cashfreeMessage = "Payment was cancelled or failed. Premium remains locked."
+        }
+    }
+    val startCashfree: (PlanId) -> Unit = { plan ->
+        scope.launch {
+            if (!cashfreeConfigured) {
+                cashfreeMessage = "Cashfree backend URL is not configured in this build."
+            } else if (FirebaseAuth.getInstance().currentUser == null) {
+                cashfreeMessage = "Please sign in before purchasing Premium."
+            } else {
+                cashfreeMessage = "Creating secure payment order..."
+                try {
+                    val planKey = when (plan) {
+                        PlanId.Monthly -> "monthly"
+                        PlanId.Yearly -> "yearly"
+                        PlanId.Lifetime -> "lifetime"
+                        else -> throw IllegalArgumentException("Invalid Premium plan.")
+                    }
+                    val order = cashfreeClient.createOrder(planKey)
+                    val intent = Intent(context, CashfreeCheckoutActivity::class.java).apply {
+                        putExtra(CashfreeCheckoutActivity.EXTRA_ORDER_ID, order.orderId)
+                        putExtra(CashfreeCheckoutActivity.EXTRA_PAYMENT_SESSION_ID, order.paymentSessionId)
+                        putExtra(CashfreeCheckoutActivity.EXTRA_ENVIRONMENT, order.environment)
+                    }
+                    checkoutLauncher.launch(intent)
+                } catch (e: Exception) {
+                    cashfreeMessage = e.message ?: "Unable to create payment order."
+                }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -113,7 +180,7 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
                     selected = selectedPayment,
                     onSelect = { selectedPayment = it },
                     googlePlayAvailable = false,
-                    cashfreeAvailable = false
+                    cashfreeAvailable = cashfreeConfigured
                 )
                 Text(
                     "Google Play Billing and Cashfree checkout are not connected yet. Payment options are shown for the upcoming integration.",
@@ -121,8 +188,10 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            PlansSection(billingState, vm)
+            PlansSection(billingState, vm, selectedPayment == PremiumPaymentMethod.CASHFREE, cashfreeConfigured, startCashfree)
         }
+
+        cashfreeMessage?.let { message -> InfoBanner(message) }
 
         billingState.message?.let { message ->
             if (billingState.testMode) {
@@ -161,7 +230,7 @@ private fun PremiumRow(title: String, description: String) {
 }
 
 @Composable
-private fun PlansSection(billingState: BillingState, vm: AppViewModel) {
+private fun PlansSection(billingState: BillingState, vm: AppViewModel, showCashfree: Boolean, cashfreeEnabled: Boolean, onCashfreePay: (PlanId) -> Unit) {
     SectionCard(title = "Plans") {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             billingState.products.forEach { product ->
@@ -172,6 +241,11 @@ private fun PlansSection(billingState: BillingState, vm: AppViewModel) {
                     enabled = billingState.testMode,
                     onBuy = { vm.purchase(product.plan) }
                 )
+                if (showCashfree) {
+                    OutlinedButton(onClick = { onCashfreePay(product.plan) }, enabled = cashfreeEnabled, modifier = Modifier.fillMaxWidth()) {
+                        Text("Pay with Cashfree")
+                    }
+                }
             }
             if (!billingState.testMode) {
                 WarningBanner(
