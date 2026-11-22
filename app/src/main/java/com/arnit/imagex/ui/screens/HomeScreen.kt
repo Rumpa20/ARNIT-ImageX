@@ -137,14 +137,14 @@ private fun HeroCard(isTestMode: Boolean, onConvert: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
+                        .size(64.dp)
                         .background(Color.White.copy(alpha = 0.18f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
                         painter = painterResource(R.drawable.ic_imagex_logo),
                         contentDescription = "ARNIT ImageX logo",
-                        modifier = Modifier.size(34.dp),
+                        modifier = Modifier.size(58.dp),
                         contentScale = ContentScale.Fit
                     )
                 }
