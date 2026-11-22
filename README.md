@@ -4,6 +4,19 @@ A universal, private, fully offline image converter for Android, built with
 **Kotlin** and **Jetpack Compose (Material 3)**. The project is structured for
 on-device builds (e.g. CodeOnTheGo) - no Android Studio or desktop required.
 
+## APK update and signing policy
+
+**Important for every APK distributed to testers or users:** use the same persistent signing key for all updates. Do not distribute APKs signed with a newly generated, temporary CI/debug key if users are expected to install them over an existing version.
+
+- Keep the Android signing keystore private and backed up securely.
+- Never commit the keystore, passwords, or signing secrets to Git.
+- Configure the stable signing key through GitHub Actions secrets before creating update-compatible APKs.
+- Increment `versionCode` for each release/update.
+- Until stable signing is configured, CI debug APKs may be incompatible with previously installed APKs signed by another key. Updating may require uninstalling the old app, which can delete local app data.
+- Before publishing any APK, confirm its signature matches the previous distributed APK.
+
+See [APK signing and update guide](docs/APK_SIGNING_AND_UPDATES.md).
+
 ## Highlights
 
 - **100% offline.** The manifest contains no `INTERNET` permission; images
