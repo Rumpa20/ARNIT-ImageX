@@ -30,10 +30,11 @@ import kotlinx.coroutines.launch
 fun AuthScreen(onBack: () -> Unit) {
     val repository = remember { FirebaseAuthRepository() }
     val scope = rememberCoroutineScope()
-    var email by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf(repository.currentUser?.email.orEmpty()) }
     var password by remember { mutableStateOf("") }
     var registering by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
+    var signedInEmail by remember { mutableStateOf(repository.currentUser?.email) }
     var message by remember { mutableStateOf<String?>(null) }
 
     Column(
@@ -43,53 +44,95 @@ fun AuthScreen(onBack: () -> Unit) {
         IconButton(onClick = onBack) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
         }
-        Text(if (registering) "Create ImageX account" else "Sign in to ImageX",
-            style = MaterialTheme.typography.headlineSmall)
-        Text("Account access for premium services and secure backend requests.",
-            style = MaterialTheme.typography.bodyMedium)
-        OutlinedTextField(
-            value = email, onValueChange = { email = it; message = null },
-            label = { Text("Email") }, singleLine = true, modifier = Modifier.fillMaxWidth()
-        )
-        OutlinedTextField(
-            value = password, onValueChange = { password = it; message = null },
-            label = { Text("Password") }, singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
-        Button(
-            onClick = {
-                if (email.isBlank() || password.length < 6) {
-                    message = "Enter a valid email and password (at least 6 characters)."
-                } else {
+
+        if (signedInEmail != null) {
+            Text("ImageX account", style = MaterialTheme.typography.headlineSmall)
+            Text("Signed in as", style = MaterialTheme.typography.bodyMedium)
+            Text(signedInEmail!!, style = MaterialTheme.typography.titleMedium)
+            Text("Firebase authentication is active. Your ID token can be used for secure backend requests.")
+            Button(
+                enabled = !busy,
+                onClick = {
                     busy = true
                     message = null
                     scope.launch {
                         try {
-                            if (registering) repository.register(email, password)
-                            else repository.signIn(email, password)
-                            message = "Signed in successfully."
+                            repository.getIdToken(forceRefresh = true)
+                            message = "Authentication token refreshed successfully. Token is kept private."
                         } catch (e: Exception) {
-                            message = e.localizedMessage ?: "Authentication failed."
+                            message = e.localizedMessage ?: "Token refresh failed."
                         } finally {
                             busy = false
                         }
                     }
-                }
-            },
-            enabled = !busy,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            if (busy) CircularProgressIndicator()
-            else Text(if (registering) "Create account" else "Sign in")
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(if (registering) "Already have an account?" else "New to ImageX?")
-            TextButton(onClick = { registering = !registering; message = null }) {
-                Text(if (registering) "Sign in" else "Create account")
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (busy) CircularProgressIndicator()
+                else Text("Check authentication")
             }
+            Button(
+                enabled = !busy,
+                onClick = {
+                    repository.signOut()
+                    signedInEmail = null
+                    password = ""
+                    message = "Signed out."
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Sign out") }
+            message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+        } else {
+            Text(if (registering) "Create ImageX account" else "Sign in to ImageX",
+                style = MaterialTheme.typography.headlineSmall)
+            Text("Account access for premium services and secure backend requests.",
+                style = MaterialTheme.typography.bodyMedium)
+            OutlinedTextField(
+                value = email, onValueChange = { email = it; message = null },
+                label = { Text("Email") }, singleLine = true, modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = password, onValueChange = { password = it; message = null },
+                label = { Text("Password") }, singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Button(
+                onClick = {
+                    if (email.isBlank() || password.length < 6) {
+                        message = "Enter an email and password (at least 6 characters)."
+                    } else {
+                        busy = true
+                        message = null
+                        scope.launch {
+                            try {
+                                val user = if (registering) repository.register(email, password)
+                                    else repository.signIn(email, password)
+                                signedInEmail = user.email ?: email.trim()
+                                password = ""
+                                message = "Signed in successfully."
+                            } catch (e: Exception) {
+                                message = e.localizedMessage ?: "Authentication failed."
+                            } finally {
+                                busy = false
+                            }
+                        }
+                    }
+                },
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (busy) CircularProgressIndicator()
+                else Text(if (registering) "Create account" else "Sign in")
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(if (registering) "Already have an account?" else "New to ImageX?")
+                TextButton(onClick = { registering = !registering; message = null }) {
+                    Text(if (registering) "Sign in" else "Create account")
+                }
+            }
+            message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         }
-        message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         Spacer(Modifier.height(8.dp))
     }
 }
