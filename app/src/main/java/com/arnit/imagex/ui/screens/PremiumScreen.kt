@@ -45,7 +45,8 @@ import androidx.compose.runtime.setValue
 @Composable
 fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
     val isPremium by vm.isPremium.collectAsState()
-    val billingState by vm.billingState.collectAsState()\n    var selectedPayment by remember { mutableStateOf(PremiumPaymentMethod.GOOGLE_PLAY) }
+    val billingState by vm.billingState.collectAsState()
+    var selectedPayment by remember { mutableStateOf(PremiumPaymentMethod.GOOGLE_PLAY) }
 
     Column(
         modifier = Modifier
