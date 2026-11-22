@@ -36,11 +36,16 @@ import com.arnit.imagex.ui.components.GradientButton
 import com.arnit.imagex.ui.components.InfoBanner
 import com.arnit.imagex.ui.components.SectionCard
 import com.arnit.imagex.ui.components.WarningBanner
+import com.arnit.imagex.ui.components.PremiumPaymentMethod
+import com.arnit.imagex.ui.components.PremiumPaymentMethodSelector
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 @Composable
 fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
     val isPremium by vm.isPremium.collectAsState()
-    val billingState by vm.billingState.collectAsState()
+    val billingState by vm.billingState.collectAsState()\n    var selectedPayment by remember { mutableStateOf(PremiumPaymentMethod.GOOGLE_PLAY) }
 
     Column(
         modifier = Modifier
@@ -102,7 +107,7 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
                 )
             }
 
-            PlansSection(billingState, vm)
+            SectionCard(title = "Payment options") {\n                PremiumPaymentMethodSelector(\n                    selected = selectedPayment,\n                    onSelect = { selectedPayment = it },\n                    googlePlayAvailable = false,\n                    cashfreeAvailable = false\n                )\n                Text(\n                    "Google Play Billing and Cashfree checkout are not connected yet. Payment options are shown for the upcoming integration.",\n                    style = MaterialTheme.typography.bodySmall,\n                    color = MaterialTheme.colorScheme.onSurfaceVariant\n                )\n            }\n            PlansSection(billingState, vm)
         }
 
         billingState.message?.let { message ->
