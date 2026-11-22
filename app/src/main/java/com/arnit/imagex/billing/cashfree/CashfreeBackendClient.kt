@@ -38,6 +38,17 @@ class CashfreeBackendClient(
         val expiresAt: String?
     )
 
+
+    data class CashfreePlan(
+        val id: String,
+        val name: String,
+        val amount: Double,
+        val currency: String,
+        val description: String
+    ) {
+        val priceText: String get() = if (currency == "INR") "₹${amount.toInt()}" else "$currency ${amount}"
+    }
+
     suspend fun createOrder(plan: String, phone: String? = null): CreatedOrder =
         withContext(Dispatchers.IO) {
             val body = JSONObject().put("plan", plan).apply {
@@ -62,6 +73,22 @@ class CashfreeBackendClient(
             expiresAt = json.optString("expires_at").takeIf { it.isNotBlank() && it != "null" }
         )
     }
+
+    suspend fun plans(): List<CashfreePlan> = withContext(Dispatchers.IO) {
+        val json = request("plans.php", "GET", null)
+        val array = json.optJSONArray("plans") ?: return@withContext emptyList()
+        (0 until array.length()).mapNotNull { index ->
+            val item = array.optJSONObject(index) ?: return@mapNotNull null
+            CashfreePlan(
+                id = item.optString("id"),
+                name = item.optString("name"),
+                amount = item.optDouble("amount", 0.0),
+                currency = item.optString("currency", "INR"),
+                description = item.optString("description")
+            ).takeIf { it.id.isNotBlank() && it.amount > 0.0 }
+        }
+    }
+
 
     suspend fun premiumStatus(): PremiumStatus = withContext(Dispatchers.IO) {
         val json = request("status.php", "GET", null)
