@@ -139,22 +139,24 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
             }
         }
 
-        SectionCard(title = "Billing test mode") {
-            SettingSwitchRow(
-                label = "Enable billing TEST MODE",
-                subtitle = "Developer-only. Lets the Premium flow be exercised without Google Play " +
-                    "Billing configured. No purchase is ever faked and no payment is taken. " +
-                    "The app is clearly marked TEST MODE while this is on.",
-                checked = billingState.testMode,
-                onChange = { enabled -> vm.toggleTestMode(enabled) }
-            )
-            if (isPremium) {
-                Text(
-                    if (billingState.testMode) "Premium unlocked via TEST MODE."
-                    else "Premium unlocked.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
+        if (BuildConfig.DEBUG) {
+            SectionCard(title = "Billing test mode") {
+                SettingSwitchRow(
+                    label = "Enable billing TEST MODE",
+                    subtitle = "Developer-only. Lets the Premium flow be exercised without Google Play " +
+                        "Billing configured. No purchase is ever faked and no payment is taken. " +
+                        "The app is clearly marked TEST MODE while this is on.",
+                    checked = billingState.testMode,
+                    onChange = { enabled -> vm.toggleTestMode(enabled) }
                 )
+                if (isPremium) {
+                    Text(
+                        if (billingState.testMode) "Premium unlocked via TEST MODE."
+                        else "Premium unlocked.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
 
