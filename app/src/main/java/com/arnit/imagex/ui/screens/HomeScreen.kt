@@ -148,7 +148,7 @@ private fun HeroCard(isTestMode: Boolean, onConvert: () -> Unit) {
                         .background(Color.White.copy(alpha = 0.18f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(painter = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "ImageX logo", modifier = Modifier.size(42.dp)
+                    Image(painter = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "ImageX logo", modifier = Modifier.size(42.dp))
                 }
                 Text(
                     if (isTestMode) "Premium (TEST MODE)" else "Universal Image Converter",
