@@ -503,6 +503,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         appScope.launch { billing.restore() }
     }
 
+    fun activateVerifiedCashfreePremium(plan: String?) {
+        val mapped = when (plan?.lowercase()) {
+            "monthly" -> PlanId.Monthly
+            "yearly" -> PlanId.Yearly
+            "lifetime" -> PlanId.Lifetime
+            else -> null
+        }
+        premium.setExternalEntitlement(true, mapped)
+    }
+
     fun toggleTestMode(enabled: Boolean) {
         (billing as? TestModeBillingGateway)?.toggleTestMode(enabled)
     }
