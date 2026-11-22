@@ -1,7 +1,7 @@
 <?php
 // Copy to config.php on server; never commit credentials.
 return [
- 'app_id'=>getenv('CASHFREE_APP_ID') ?: '',
+ 'firebase_project_id'=>getenv('FIREBASE_PROJECT_ID') ?: '',\n 'app_id'=>getenv('CASHFREE_APP_ID') ?: '',
  'secret'=>getenv('CASHFREE_SECRET_KEY') ?: '',
  'api_version'=>'2025-01-01',
  'environment'=>getenv('CASHFREE_ENV') ?: 'sandbox',
