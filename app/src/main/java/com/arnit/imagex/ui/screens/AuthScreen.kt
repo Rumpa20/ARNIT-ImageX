@@ -74,10 +74,20 @@ fun AuthScreen(onBack: () -> Unit) {
             Button(
                 enabled = !busy,
                 onClick = {
-                    repository.signOut()
-                    signedInEmail = null
-                    password = ""
-                    message = "Signed out."
+                    busy = true
+                    message = null
+                    scope.launch {
+                        try {
+                            repository.signOut()
+                            signedInEmail = null
+                            password = ""
+                            message = "Signed out."
+                        } catch (e: Exception) {
+                            message = e.localizedMessage ?: "Sign out failed."
+                        } finally {
+                            busy = false
+                        }
+                    }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Sign out") }
