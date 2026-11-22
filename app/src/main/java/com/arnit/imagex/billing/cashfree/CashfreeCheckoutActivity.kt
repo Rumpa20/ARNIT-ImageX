@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import com.cashfree.pg.api.CFPaymentGatewayService
-import com.cashfree.pg.core.api.CFSession.CFSessionBuilder
+import com.cashfree.pg.core.api.CFSession
 import com.cashfree.pg.core.api.callback.CFCheckoutResponseCallback
 import com.cashfree.pg.core.api.exception.CFException
 import com.cashfree.pg.core.api.utils.CFErrorResponse
@@ -30,7 +30,7 @@ class CashfreeCheckoutActivity : ComponentActivity(), CFCheckoutResponseCallback
 
         try {
             CFPaymentGatewayService.getInstance().setCheckoutCallback(this)
-            val cfSession = CFSessionBuilder()
+            val cfSession = CFSession.CFSessionBuilder()
                 .setEnvironment(
                     if (environment.equals("production", ignoreCase = true))
                         CFSession.Environment.PRODUCTION
