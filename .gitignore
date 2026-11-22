@@ -1,7 +1,42 @@
+# Gradle and Android build outputs
 .gradle/
 build/
+app/build/
+*/build/
 local.properties
 *.iml
 .idea/
 captures/
 .DS_Store
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+config.php
+cashfree-config.php
+secrets.php
+secrets/
+credentials/
+*.secret
+*.secrets
+
+# PHP private runtime data
+backend/**/private/
+backend/**/storage/
+backend/**/*.sqlite
+backend/**/*.sqlite3
+backend/**/*.db
+
+# Signing credentials
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+
+# Logs and dumps
+*.log
+*.sql
+*.dump
