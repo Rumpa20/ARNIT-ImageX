@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.arnit.imagex.ui.AppViewModel
+import com.arnit.imagex.ui.screens.AuthScreen
 import com.arnit.imagex.ui.screens.BatchScreen
 import com.arnit.imagex.ui.screens.ConvertScreen
 import com.arnit.imagex.ui.screens.FormatsScreen
@@ -24,6 +25,7 @@ object Routes {
     const val HISTORY = "history"
     const val PREMIUM = "premium"
     const val SETTINGS = "settings"
+    const val AUTH = "auth"
 }
 
 @Composable
@@ -87,7 +89,14 @@ fun ImageXNavHost(vm: AppViewModel, modifier: Modifier = Modifier) {
             PremiumScreen(vm = vm, onBack = { navController.popBackStack() })
         }
         composable(Routes.SETTINGS) {
-            SettingsScreen(vm = vm, onBack = { navController.popBackStack() })
+            SettingsScreen(
+                vm = vm,
+                onBack = { navController.popBackStack() },
+                onAccount = { navController.navigate(Routes.AUTH) }
+            )
+        }
+        composable(Routes.AUTH) {
+            AuthScreen(onBack = { navController.popBackStack() })
         }
     }
 }
