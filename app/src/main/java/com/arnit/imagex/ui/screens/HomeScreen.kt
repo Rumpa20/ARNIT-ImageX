@@ -67,15 +67,15 @@ fun HomeScreen(
     ) {
         Spacer(Modifier.height(26.dp))
         HeroCard(isTestMode = billingState.testMode, onConvert = onConvert)
-        HomeTile(Icons.Filled.Image, "Convert Image", "Pick one image and choose any output format", onConvert)
-        HomeTile(Icons.Filled.StackedLineChart, "Batch Convert", if (isPremium) "Queue up to 50 images" else "Premium feature", onBatch)
-        HomeTile(Icons.Filled.History, "Recent Conversions", "Metadata only - never image contents", onHistory)
-        HomeTile(Icons.Filled.Shield, "Supported Formats", "See what this build can decode and encode", onFormats)
+        HomeTile(Icons.Filled.Image, "Convert Image", "Pick one image and choose any output format", onClick = onConvert)
+        HomeTile(Icons.Filled.StackedLineChart, "Batch Convert", if (isPremium) "Queue up to 50 images" else "Premium feature", onClick = onBatch)
+        HomeTile(Icons.Filled.History, "Recent Conversions", "Metadata only - never image contents", onClick = onHistory)
+        HomeTile(Icons.Filled.Shield, "Supported Formats", "See what this build can decode and encode", onClick = onFormats)
         if (!isPremium) {
-            HomeTile(Icons.Filled.AutoAwesome, "Premium Upgrade", "Batch mode, advanced formats, larger images", true, onPremium)
+            HomeTile(Icons.Filled.AutoAwesome, "Premium Upgrade", "Batch mode, advanced formats, larger images", highlighted = true, onClick = onPremium)
         }
-        HomeTile(Icons.Filled.Person, "Account", "Sign in or create an ImageX account", onAccount)
-        HomeTile(Icons.Filled.Settings, "Settings", "Theme, defaults, privacy and cleanup", onSettings)
+        HomeTile(Icons.Filled.Person, "Account", "Sign in or create an ImageX account", onClick = onAccount)
+        HomeTile(Icons.Filled.Settings, "Settings", "Theme, defaults, privacy and cleanup", onClick = onSettings)
         Spacer(Modifier.height(30.dp))
         Text("Images are processed fully offline on this device and never uploaded.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
