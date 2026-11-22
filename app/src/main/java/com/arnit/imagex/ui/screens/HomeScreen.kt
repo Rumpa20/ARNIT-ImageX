@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.StackedLineChart
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -49,7 +50,8 @@ fun HomeScreen(
     onHistory: () -> Unit,
     onFormats: () -> Unit,
     onPremium: () -> Unit,
-    onSettings: () -> Unit
+    onSettings: () -> Unit,
+    onAccount: () -> Unit
 ) {
     val isPremium by vm.isPremium.collectAsState()
     val billingState by vm.billingState.collectAsState()
@@ -64,94 +66,40 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Spacer(Modifier.height(26.dp))
-        HeroCard(
-            isTestMode = billingState.testMode,
-            onConvert = onConvert
-        )
-
-        HomeTile(
-            icon = Icons.Filled.Image,
-            title = "Convert Image",
-            subtitle = "Pick one image and choose any output format",
-            onClick = onConvert
-        )
-        HomeTile(
-            icon = Icons.Filled.StackedLineChart,
-            title = "Batch Convert",
-            subtitle = if (isPremium) "Queue up to 50 images" else "Premium feature",
-            onClick = onBatch
-        )
-        HomeTile(
-            icon = Icons.Filled.History,
-            title = "Recent Conversions",
-            subtitle = "Metadata only - never image contents",
-            onClick = onHistory
-        )
-        HomeTile(
-            icon = Icons.Filled.Shield,
-            title = "Supported Formats",
-            subtitle = "See what this build can decode and encode",
-            onClick = onFormats
-        )
+        HeroCard(isTestMode = billingState.testMode, onConvert = onConvert)
+        HomeTile(Icons.Filled.Image, "Convert Image", "Pick one image and choose any output format", onConvert)
+        HomeTile(Icons.Filled.StackedLineChart, "Batch Convert", if (isPremium) "Queue up to 50 images" else "Premium feature", onBatch)
+        HomeTile(Icons.Filled.History, "Recent Conversions", "Metadata only - never image contents", onHistory)
+        HomeTile(Icons.Filled.Shield, "Supported Formats", "See what this build can decode and encode", onFormats)
         if (!isPremium) {
-            HomeTile(
-                icon = Icons.Filled.AutoAwesome,
-                title = "Premium Upgrade",
-                subtitle = "Batch mode, advanced formats, larger images",
-                highlighted = true,
-                onClick = onPremium
-            )
+            HomeTile(Icons.Filled.AutoAwesome, "Premium Upgrade", "Batch mode, advanced formats, larger images", true, onPremium)
         }
-        HomeTile(
-            icon = Icons.Filled.Settings,
-            title = "Settings",
-            subtitle = "Theme, defaults, privacy and cleanup",
-            onClick = onSettings
-        )
+        HomeTile(Icons.Filled.Person, "Account", "Sign in or create an ImageX account", onAccount)
+        HomeTile(Icons.Filled.Settings, "Settings", "Theme, defaults, privacy and cleanup", onSettings)
         Spacer(Modifier.height(30.dp))
-        Text(
-            "Images are processed fully offline on this device and never uploaded.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Text("Images are processed fully offline on this device and never uploaded.",
+            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun HeroCard(isTestMode: Boolean, onConvert: () -> Unit) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                brush = Brush.linearGradient(listOf(BrandGradientStart, BrandGradientEnd)),
-                shape = RoundedCornerShape(26.dp)
-            )
-            .clickable { onConvert() }
-            .padding(24.dp)
+        modifier = Modifier.fillMaxWidth().background(
+            brush = Brush.linearGradient(listOf(BrandGradientStart, BrandGradientEnd)),
+            shape = RoundedCornerShape(26.dp)
+        ).clickable { onConvert() }.padding(24.dp)
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .background(Color.White.copy(alpha = 0.18f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Filled.Image, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White)
+                Box(Modifier.size(42.dp).background(Color.White.copy(alpha = 0.18f), CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Image, contentDescription = null, tint = Color.White)
                 }
-                Text(
-                    if (isTestMode) "Premium (TEST MODE)" else "Universal Image Converter",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = androidx.compose.ui.graphics.Color.White,
-                    modifier = Modifier.padding(start = 12.dp)
-                )
+                Text(if (isTestMode) "Premium (TEST MODE)" else "Universal Image Converter",
+                    style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.padding(start = 12.dp))
             }
-            Text(
-                "Convert anything to PNG, JPEG, WebP, TIFF and more -\noriginal resolution, top quality, 100% offline.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.92f),
-                modifier = Modifier.padding(top = 14.dp)
-            )
+            Text("Convert anything to PNG, JPEG, WebP, TIFF and more -\noriginal resolution, top quality, 100% offline.",
+                style = MaterialTheme.typography.bodyLarge, color = Color.White.copy(alpha = 0.92f), modifier = Modifier.padding(top = 14.dp))
         }
     }
 }
@@ -166,24 +114,11 @@ private fun HomeTile(
 ) {
     SectionCard(title = title, modifier = Modifier.clickable { onClick() }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                icon,
-                contentDescription = null,
+            Icon(icon, contentDescription = null,
                 tint = if (highlighted) com.arnit.imagex.ui.theme.Purple500 else MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(26.dp)
-            )
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp)
-            )
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                modifier = Modifier.size(26.dp))
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(start = 12.dp))
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
