@@ -8,7 +8,7 @@ foreach(($config['plans']??[]) as $key=>$plan){
   $plans[]=[
     'id'=>$key,
     'name'=>ucfirst($key),
-    'amount'=>(float)$plan['amount',
+    'amount'=>(float)($plan['amount']??0),
     'currency'=>(string)$plan['currency'],
     'description'=>$days===null?'Pay once, keep Premium forever.':'Premium access for '.$days.' days.'
   ];
