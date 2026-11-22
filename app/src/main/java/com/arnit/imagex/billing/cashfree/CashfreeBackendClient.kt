@@ -73,8 +73,9 @@ class CashfreeBackendClient(
     }
 
     private suspend fun request(path: String, method: String, body: JSONObject?): JSONObject {
-        val token = auth.currentUser?.getIdToken(false)?.await()?.token
-            ?: throw IllegalStateException("Please sign in before purchasing Premium.")
+        val user = auth.currentUser ?: throw IllegalStateException("Please sign in before purchasing Premium.")
+        val tokenResult = user.getIdToken(false).await()
+        val token = tokenResult.token ?: throw IllegalStateException("Firebase returned an empty ID token.")
         if (baseUrl.isBlank()) throw IllegalStateException("Cashfree backend URL is not configured for this build.")
         val normalizedBase = baseUrl.trimEnd('/')
         val connection = (URL("$normalizedBase/$path").openConnection() as HttpURLConnection).apply {
