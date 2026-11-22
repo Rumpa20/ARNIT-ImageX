@@ -47,11 +47,23 @@ class PremiumRepository(
     private val _activePlan = MutableStateFlow<PlanId?>(null)
     val activePlan: StateFlow<PlanId?> = _activePlan
 
+    private var externalUnlocked = false
+    private var externalPlan: PlanId? = null
+
+
+    fun setExternalEntitlement(unlocked: Boolean, plan: PlanId? = null) {
+        externalUnlocked = unlocked
+        externalPlan = if (unlocked) plan else null
+        _isPremium.value = unlocked || billing.state.value.unlocked
+        _activePlan.value = externalPlan ?: billing.state.value.plan
+    }
+
+
     init {
         scope.launch {
             billing.state.collect { state ->
-                _isPremium.value = state.unlocked
-                _activePlan.value = state.plan
+                _isPremium.value = state.unlocked || externalUnlocked
+                _activePlan.value = state.plan ?: externalPlan
                 _testMode.value = state.testMode
             }
         }

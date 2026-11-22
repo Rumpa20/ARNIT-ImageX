@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <!-- Image tile -->
+    <path android:pathData="M24,28 L78,28 Q86,28 86,36 L86,82 Q86,90 78,90 L24,90 Q16,90 16,82 L16,36 Q16,28 24,28 Z"
+        android:fillColor="#152C59" android:strokeColor="#7CE4FF" android:strokeWidth="4"/>
+    <!-- Landscape -->
+    <path android:pathData="M25,76 L43,52 L55,65 L66,54 L78,76 Z" android:fillColor="#FFFFFF"/>
+    <path android:pathData="M63,42 a6,6 0 1 0 12,0 a6,6 0 1 a-12,0" android:fillColor="#FFD166"/>
+    <!-- Conversion arrows, forming a loop -->
+    <path android:pathData="M90,30 C100,34 104,44 102,54" android:fillColor="#00000000" android:strokeColor="#7CE4FF" android:strokeWidth="5" android:strokeLineCap="round"/>
+    <path android:pathData="M94,49 L102,57 L108,47" android:fillColor="#00000000" android:strokeColor="#7CE4FF" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round"/>
+    <path android:pathData="M99,84 C94,96 84,102 72,102" android:fillColor="#00000000" android:strokeColor="#A78BFA" android:strokeWidth="5" android:strokeLineCap="round"/>
+    <path android:pathData="M78,96 L70,102 L80,108" android:fillColor="#00000000" android:strokeColor="#A78BFA" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round"/>
+</vector>

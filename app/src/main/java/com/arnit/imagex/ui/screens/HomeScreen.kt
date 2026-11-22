@@ -1,5 +1,6 @@
 package com.arnit.imagex.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +36,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import com.arnit.imagex.R
 import androidx.compose.ui.unit.dp
 import com.arnit.imagex.ui.AppViewModel
 import com.arnit.imagex.ui.components.SectionCard
@@ -130,20 +134,26 @@ private fun HeroCard(isTestMode: Boolean, onConvert: () -> Unit) {
             .padding(24.dp)
     ) {
         Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
+                        .size(100.dp)
                         .background(Color.White.copy(alpha = 0.18f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.Image, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White)
+                    Image(
+                        painter = painterResource(R.drawable.ic_imagex_logo),
+                        contentDescription = "ARNIT ImageX logo",
+                        modifier = Modifier.size(92.dp),
+                        contentScale = ContentScale.Fit
+                    )
                 }
                 Text(
                     if (isTestMode) "Premium (TEST MODE)" else "Universal Image Converter",
                     style = MaterialTheme.typography.titleMedium,
                     color = androidx.compose.ui.graphics.Color.White,
-                    modifier = Modifier.padding(start = 12.dp)
+                    modifier = Modifier.padding(top = 12.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
             }
             Text(

@@ -14,6 +14,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+      - name: Set up PHP for backend lint
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - name: Lint Cashfree backend PHP
+        run: find backend/cashfree -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
