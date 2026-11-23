@@ -23,7 +23,8 @@ class CashfreeCheckoutActivity : AppCompatActivity(), CFCheckoutResponseCallback
         super.onCreate(savedInstanceState)
         val orderId = intent.getStringExtra(EXTRA_ORDER_ID).orEmpty()
         val sessionId = intent.getStringExtra(EXTRA_SESSION_ID).orEmpty()
-        if (orderId.isBlank() || sessionId.isBlank()) {
+        val environmentName = intent.getStringExtra(EXTRA_ENVIRONMENT).orEmpty()
+        if (orderId.isBlank() || sessionId.isBlank() || environmentName !in setOf("sandbox", "production")) {
             finishWith(RESULT_INVALID, orderId)
             return
         }
@@ -31,7 +32,7 @@ class CashfreeCheckoutActivity : AppCompatActivity(), CFCheckoutResponseCallback
         try {
             CFPaymentGatewayService.getInstance().setCheckoutCallback(this)
             val session: CFSession = CFSessionBuilder()
-                .setEnvironment(CFSession.Environment.SANDBOX)
+                .setEnvironment(if (environmentName == "production") CFSession.Environment.PRODUCTION else CFSession.Environment.SANDBOX)
                 .setPaymentSessionID(sessionId)
                 .setOrderId(orderId)
                 .build()
@@ -75,6 +76,7 @@ class CashfreeCheckoutActivity : AppCompatActivity(), CFCheckoutResponseCallback
     companion object {
         const val EXTRA_ORDER_ID = "com.arnit.imagex.payment.ORDER_ID"
         const val EXTRA_SESSION_ID = "com.arnit.imagex.payment.SESSION_ID"
+        const val EXTRA_ENVIRONMENT = "com.arnit.imagex.payment.ENVIRONMENT"
         const val EXTRA_RESULT = "com.arnit.imagex.payment.RESULT"
         const val RESULT_VERIFY = "VERIFY_BACKEND"
         const val RESULT_FAILURE = "PAYMENT_FAILURE"
