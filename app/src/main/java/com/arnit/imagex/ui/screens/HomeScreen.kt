@@ -22,9 +22,13 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.StackedLineChart
 import androidx.compose.material3.Icon
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.arnit.imagex.R
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,6 +53,7 @@ fun HomeScreen(
     onHistory: () -> Unit,
     onFormats: () -> Unit,
     onPremium: () -> Unit,
+    onAccount: () -> Unit,
     onSettings: () -> Unit
 ) {
     val isPremium by vm.isPremium.collectAsState()
@@ -103,6 +108,12 @@ fun HomeScreen(
             )
         }
         HomeTile(
+            icon = Icons.Filled.AccountCircle,
+            title = "Account",
+            subtitle = "Sign in or create an account",
+            onClick = onAccount
+        )
+        HomeTile(
             icon = Icons.Filled.Settings,
             title = "Settings",
             subtitle = "Theme, defaults, privacy and cleanup",
@@ -137,7 +148,7 @@ private fun HeroCard(isTestMode: Boolean, onConvert: () -> Unit) {
                         .background(Color.White.copy(alpha = 0.18f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.Image, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White)
+                    Image(painter = painterResource(R.drawable.ic_launcher_foreground), contentDescription = "ImageX logo", modifier = Modifier.size(42.dp))
                 }
                 Text(
                     if (isTestMode) "Premium (TEST MODE)" else "Universal Image Converter",

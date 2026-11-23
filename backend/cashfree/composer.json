@@ -3,6 +3,6 @@
   "description": "ARNIT ImageX Cashfree backend with Firebase ID token verification",
   "require": {
     "php": ">=8.1",
-    "firebase/php-jwt": "^6.11"
+    "firebase/php-jwt": "^7.0"
   }
 }

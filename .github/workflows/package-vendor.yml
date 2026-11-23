@@ -1,0 +1,30 @@
+name: Package ImageX PHP Dependencies
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  composer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+      - name: Install production Composer dependencies
+        working-directory: backend/cashfree
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+      - name: Package vendor folder at ZIP root
+        run: zip -r imagex-vendor.zip backend/cashfree/vendor
+      - uses: actions/upload-artifact@v4
+        with:
+          name: imagex-vendor
+          path: imagex-vendor.zip
+          retention-days: 7

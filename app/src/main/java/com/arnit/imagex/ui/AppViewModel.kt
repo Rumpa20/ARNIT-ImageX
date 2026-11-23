@@ -12,6 +12,10 @@ import com.arnit.imagex.billing.BillingGateway
 import com.arnit.imagex.billing.BillingState
 import com.arnit.imagex.billing.PlanId
 import com.arnit.imagex.billing.TestModeBillingGateway
+import com.arnit.imagex.backend.ImageXBackendClient
+import com.arnit.imagex.backend.PaymentOrder
+import com.arnit.imagex.backend.PremiumStatus
+import com.arnit.imagex.backend.PaymentVerification
 import com.arnit.imagex.converter.ConversionEngine
 import com.arnit.imagex.core.ConversionException
 import com.arnit.imagex.core.ConversionProgress
@@ -28,12 +32,14 @@ import com.arnit.imagex.formats.ImageFormatId
 import com.arnit.imagex.history.HistoryEntry
 import com.arnit.imagex.history.HistoryRepository
 import com.arnit.imagex.premium.PremiumRepository
+import com.arnit.imagex.premium.FeatureLimits
 import com.arnit.imagex.settings.AppSettings
 import com.arnit.imagex.settings.SettingsRepository
 import com.arnit.imagex.storage.DocumentStore
 import com.arnit.imagex.storage.TempFileManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -61,8 +67,23 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val appSettings: StateFlow<AppSettings> = settings.settings
         .stateIn(appScope, SharingStarted.Eagerly, AppSettings())
 
-    val isPremium: StateFlow<Boolean> = premium.isPremium
     val billingState: StateFlow<BillingState> = billing.state
+
+    private val backend = ImageXBackendClient()
+    private val _serverPremiumStatus = MutableStateFlow<PremiumStatus?>(null)
+    val serverPremiumStatus: StateFlow<PremiumStatus?> = _serverPremiumStatus
+    val isPremium: StateFlow<Boolean> = combine(premium.isPremium, _serverPremiumStatus) { local, server ->
+        local || server?.premium == true
+    }.stateIn(appScope, SharingStarted.Eagerly, premium.isPremium.value)
+    private val _cashfreeOrder = MutableStateFlow<PaymentOrder?>(null)
+    val cashfreeOrder: StateFlow<PaymentOrder?> = _cashfreeOrder
+    private val _cashfreeBusy = MutableStateFlow(false)
+    val cashfreeBusy: StateFlow<Boolean> = _cashfreeBusy
+    private val _cashfreeMessage = MutableStateFlow<String?>(null)
+    val cashfreeMessage: StateFlow<String?> = _cashfreeMessage
+
+
+    init { refreshServerPremiumStatus() }
 
     val historyEntries: StateFlow<List<HistoryEntry>> = history.entries
 
@@ -149,11 +170,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun formatSupports(): List<FormatSupport> = FormatCatalog.supports(decoders, encoders)
 
-    fun outputAllowed(format: ImageFormatId): Boolean = premium.outputAllowed(format)
+    fun outputAllowed(format: ImageFormatId): Boolean = isPremium.value || premium.outputAllowed(format)
 
-    fun qualityAllowed(mode: QualityMode): Boolean = premium.qualityAllowed(mode)
-
-    fun planMaxDimension(): Int = premium.limits().maxDimension
+    fun qualityAllowed(mode: QualityMode): Boolean = isPremium.value || premium.qualityAllowed(mode)
+    private fun effectiveLimits(): FeatureLimits = if (isPremium.value) FeatureLimits(FormatCatalog.PREMIUM_MAX_DIMENSION, FormatCatalog.PREMIUM_BATCH_LIMIT, true, true) else premium.limits()
+    fun planMaxDimension(): Int = effectiveLimits().maxDimension
 
     fun formatBytes(bytes: Long): String = engine.formatBytes(bytes)
 
@@ -184,7 +205,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val src = _source.value ?: return
         if (_conversionUi.value.phase == ConversionPhase.Running) return
 
-        val limits = premium.limits()
+        val limits = effectiveLimits()
         val sourceInfo = ConversionEngine.SourceInfo(
             fileName = src.displayName,
             declaredMime = src.mime,
@@ -200,7 +221,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         source = sourceInfo,
                         settings = outputSettings,
                         maxDimension = limits.maxDimension,
-                        premiumUnlocked = premium.isPremium.value
+                        premiumUnlocked = isPremium.value
                     ) { progress ->
                         _conversionUi.value = _conversionUi.value.copy(progress = progress)
                     }
@@ -333,7 +354,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val batchOutputNames = HashMap<Uri, String>()
 
     fun addBatchItems(items: List<DocumentStore.PickedFile>) {
-        val limit = premium.limits().batchLimit
+        val limit = effectiveLimits().batchLimit
         val current = _batchItems.value.toMutableList()
         for (item in items) {
             if (current.size >= limit) break
@@ -494,6 +515,42 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     // ------------------------------------------------------------------
     // Premium / settings
     // ------------------------------------------------------------------
+
+    fun refreshServerPremiumStatus() {
+        appScope.launch {
+            try { _serverPremiumStatus.value = backend.premiumStatus() }
+            catch (e: Exception) { _cashfreeMessage.value = e.message ?: "Unable to refresh server membership." }
+        }
+    }
+
+
+    fun createCashfreeOrder(plan: PlanId, phone: String) {
+        val planKey = when (plan) { PlanId.Monthly -> "monthly"; PlanId.Yearly -> "yearly"; PlanId.Lifetime -> "lifetime"; else -> null }
+        if (planKey == null) { _cashfreeMessage.value = "Choose a valid Premium plan."; return }
+        if (phone.trim().length < 10) { _cashfreeMessage.value = "Enter a valid phone number."; return }
+        appScope.launch {
+            _cashfreeBusy.value = true; _cashfreeMessage.value = null; _cashfreeOrder.value = null
+            try { _cashfreeOrder.value = backend.createPaymentOrder(planKey, phone.trim()) }
+            catch (e: Exception) { _cashfreeMessage.value = e.message ?: "Unable to create payment order." }
+            finally { _cashfreeBusy.value = false }
+        }
+    }
+
+
+    fun verifyCashfreePayment(orderId: String) {
+        appScope.launch {
+            _cashfreeBusy.value = true; _cashfreeMessage.value = "Verifying payment securely…"
+            try {
+                val verification: PaymentVerification = backend.verifyPayment(orderId)
+                _cashfreeMessage.value = if (verification.premiumUnlocked) "Payment verified. Premium activated." else "Payment status: ${verification.status}. Premium will unlock after backend confirmation."
+                refreshServerPremiumStatus()
+            } catch (e: Exception) { _cashfreeMessage.value = e.message ?: "Payment verification failed." }
+            finally { _cashfreeBusy.value = false }
+        }
+    }
+
+    fun clearCashfreeOrder() { _cashfreeOrder.value = null }
+
 
     fun purchase(plan: PlanId) {
         appScope.launch { billing.purchase(plan) }
