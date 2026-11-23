@@ -61,6 +61,12 @@ fun BatchScreen(
     val isPremium by vm.isPremium.collectAsState()
     val appSettings by vm.appSettings.collectAsState()
 
+    // Re-check server entitlement whenever this screen opens so Premium access
+    // survives sign-out/sign-in and does not rely on a stale local billing state.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        vm.refreshServerPremiumStatus()
+    }
+
     if (!isPremium) {
         Column(
             modifier = Modifier
