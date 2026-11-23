@@ -11,6 +11,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.launch
+import com.arnit.imagex.backend.ImageXBackendClient
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
@@ -23,6 +26,9 @@ fun AccountScreen(onBack: () -> Unit) {
     var createAccount by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
     var user by remember { mutableStateOf(auth.currentUser) }
+    var backendMessage by remember { mutableStateOf("") }
+    var checkingBackend by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -31,7 +37,19 @@ fun AccountScreen(onBack: () -> Unit) {
         Text("Account", style = MaterialTheme.typography.headlineMedium)
         user?.let {
             Text("Signed in as: ${it.email ?: "Firebase user"}")
-            Button(onClick = { auth.signOut(); user = null; message = "Signed out" }) {
+            Button(enabled = !checkingBackend, onClick = {
+                checkingBackend = true
+                backendMessage = "Checking backend..."
+                scope.launch {
+                    backendMessage = try {
+                        val status = ImageXBackendClient().premiumStatus()
+                        if (status.premium) "Backend: Premium active (${status.plan ?: "plan unknown"})" else "Backend: Free plan. Firebase token accepted."
+                    } catch (e: Exception) { "Backend check failed: ${e.message ?: "Unknown error"}" }
+                    checkingBackend = false
+                }
+            }) { Text(if (checkingBackend) "Checking..." else "Check Premium Status") }
+            if (backendMessage.isNotBlank()) Text(backendMessage, color = MaterialTheme.colorScheme.primary)
+            Button(onClick = { auth.signOut(); user = null; message = "Signed out"; backendMessage = "" }) {
                 Text("Sign out")
             }
         } ?: run {
