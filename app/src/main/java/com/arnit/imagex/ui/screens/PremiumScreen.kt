@@ -72,8 +72,11 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
         val data = result.data
         val orderId = data?.getStringExtra(CashfreeCheckoutActivity.EXTRA_ORDER_ID).orEmpty()
         val status = data?.getStringExtra(CashfreeCheckoutActivity.EXTRA_RESULT).orEmpty()
-        if (status == CashfreeCheckoutActivity.RESULT_VERIFY && orderId.isNotBlank()) vm.verifyCashfreePayment(orderId)
-        else if (status == CashfreeCheckoutActivity.RESULT_FAILURE) vm.clearCashfreeOrder()
+        // Clear the pending order for every checkout result to prevent stale checkout relaunch.
+        vm.clearCashfreeOrder()
+        if (status == CashfreeCheckoutActivity.RESULT_VERIFY && orderId.isNotBlank()) {
+            vm.verifyCashfreePayment(orderId)
+        }
     }
     androidx.compose.runtime.LaunchedEffect(cashfreeOrder) {
         cashfreeOrder?.let { order ->
