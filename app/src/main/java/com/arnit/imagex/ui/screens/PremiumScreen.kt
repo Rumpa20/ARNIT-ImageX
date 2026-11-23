@@ -133,29 +133,29 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
 
             SectionCard(title = "Choose your plan") {
                 Text(
-                    "Select the plan that works for you. Purchase availability depends on the billing integration in this build.",
+                    "Choose a plan. Checkout is handled securely by Cashfree and Premium unlocks only after server verification.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(8.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     billingState.products.forEach { product ->
+                        val price = when (product.plan) {
+                            PlanId.Monthly -> "₹99 / 30 days"
+                            PlanId.Yearly -> "₹799 / year"
+                            PlanId.Lifetime -> "₹1,499 lifetime"
+                            else -> product.priceText
+                        }
                         PlanCard(
                             planName = product.plan.displayName,
-                            priceText = product.priceText,
-                            description = product.description,
-                            enabled = billingState.testMode,
-                            onBuy = { vm.purchase(product.plan) }
+                            priceText = price,
+                            description = product.description
                         )
                     }
                 }
-                if (!billingState.testMode) {
-                    Spacer(Modifier.height(8.dp))
-                    WarningBanner("Real purchases are not enabled in this build. Purchase buttons remain disabled.")
-                }
             }
 
-            SectionCard(title = "Payment method") {
+            SectionCard(title = "Checkout") {
                 PremiumPaymentMethodSelector(
                     selected = selectedPayment,
                     onSelect = { selectedPayment = it },
@@ -238,7 +238,7 @@ private fun PremiumRow(title: String, description: String) {
 }
 
 @Composable
-private fun PlanCard(planName: String, priceText: String, description: String, enabled: Boolean, onBuy: () -> Unit) {
+private fun PlanCard(planName: String, priceText: String, description: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -250,7 +250,6 @@ private fun PlanCard(planName: String, priceText: String, description: String, e
                 Text(priceText, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             }
             Text(description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            GradientButton(text = if (enabled) "Try $planName (Test)" else "Not available yet", onClick = onBuy, enabled = enabled)
         }
     }
 }
