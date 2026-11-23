@@ -38,6 +38,7 @@ import com.arnit.imagex.storage.DocumentStore
 import com.arnit.imagex.storage.TempFileManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -65,12 +66,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val appSettings: StateFlow<AppSettings> = settings.settings
         .stateIn(appScope, SharingStarted.Eagerly, AppSettings())
 
-    val isPremium: StateFlow<Boolean> = premium.isPremium
     val billingState: StateFlow<BillingState> = billing.state
 
     private val backend = ImageXBackendClient()
     private val _serverPremiumStatus = MutableStateFlow<PremiumStatus?>(null)
     val serverPremiumStatus: StateFlow<PremiumStatus?> = _serverPremiumStatus
+    val isPremium: StateFlow<Boolean> = combine(premium.isPremium, _serverPremiumStatus) { local, server ->
+        local || server?.premium == true
+    }.stateIn(appScope, SharingStarted.Eagerly, premium.isPremium.value)
     private val _cashfreeOrder = MutableStateFlow<PaymentOrder?>(null)
     val cashfreeOrder: StateFlow<PaymentOrder?> = _cashfreeOrder
     private val _cashfreeBusy = MutableStateFlow(false)
