@@ -32,6 +32,7 @@ import com.arnit.imagex.formats.ImageFormatId
 import com.arnit.imagex.history.HistoryEntry
 import com.arnit.imagex.history.HistoryRepository
 import com.arnit.imagex.premium.PremiumRepository
+import com.arnit.imagex.premium.FeatureLimits
 import com.arnit.imagex.settings.AppSettings
 import com.arnit.imagex.settings.SettingsRepository
 import com.arnit.imagex.storage.DocumentStore
@@ -169,11 +170,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun formatSupports(): List<FormatSupport> = FormatCatalog.supports(decoders, encoders)
 
-    fun outputAllowed(format: ImageFormatId): Boolean = premium.outputAllowed(format)
+    fun outputAllowed(format: ImageFormatId): Boolean = isPremium.value || premium.outputAllowed(format)
 
-    fun qualityAllowed(mode: QualityMode): Boolean = premium.qualityAllowed(mode)
-
-    fun planMaxDimension(): Int = premium.limits().maxDimension
+    fun qualityAllowed(mode: QualityMode): Boolean = isPremium.value || premium.qualityAllowed(mode)
+    private fun effectiveLimits(): FeatureLimits = if (isPremium.value) FeatureLimits(FormatCatalog.PREMIUM_MAX_DIMENSION, FormatCatalog.PREMIUM_BATCH_LIMIT, true, true) else premium.limits()
+    fun planMaxDimension(): Int = effectiveLimits().maxDimension
 
     fun formatBytes(bytes: Long): String = engine.formatBytes(bytes)
 
@@ -204,7 +205,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val src = _source.value ?: return
         if (_conversionUi.value.phase == ConversionPhase.Running) return
 
-        val limits = premium.limits()
+        val limits = effectiveLimits()
         val sourceInfo = ConversionEngine.SourceInfo(
             fileName = src.displayName,
             declaredMime = src.mime,
@@ -220,7 +221,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         source = sourceInfo,
                         settings = outputSettings,
                         maxDimension = limits.maxDimension,
-                        premiumUnlocked = premium.isPremium.value
+                        premiumUnlocked = isPremium.value
                     ) { progress ->
                         _conversionUi.value = _conversionUi.value.copy(progress = progress)
                     }
@@ -353,7 +354,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val batchOutputNames = HashMap<Uri, String>()
 
     fun addBatchItems(items: List<DocumentStore.PickedFile>) {
-        val limit = premium.limits().batchLimit
+        val limit = effectiveLimits().batchLimit
         val current = _batchItems.value.toMutableList()
         for (item in items) {
             if (current.size >= limit) break
