@@ -5,17 +5,18 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.cashfree.pg.api.CFPaymentGatewayService
+import com.cashfree.pg.core.api.CFSession
 import com.cashfree.pg.core.api.CFSession.CFSessionBuilder
+import com.cashfree.pg.core.api.CFTheme.CFThemeBuilder
 import com.cashfree.pg.core.api.callback.CFCheckoutResponseCallback
 import com.cashfree.pg.core.api.exception.CFException
 import com.cashfree.pg.core.api.utils.CFErrorResponse
-import com.cashfree.pg.core.api.webcheckout.CFWebCheckoutPayment.CFWebCheckoutPaymentBuilder
-import com.cashfree.pg.core.api.webcheckout.CFWebCheckoutTheme.CFWebCheckoutThemeBuilder
+import com.cashfree.pg.ui.api.CFDropCheckoutPayment.CFDropCheckoutPaymentBuilder
 
 /**
- * Cashfree hosted checkout launcher.
+ * Cashfree Drop Checkout launcher.
  * The app must create the order on its authenticated backend first.
- * This Activity only returns the SDK callback; the backend must verify payment.
+ * Payment callbacks are not proof of payment; caller must verify with backend.
  */
 class CashfreeCheckoutActivity : AppCompatActivity(), CFCheckoutResponseCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,18 +30,22 @@ class CashfreeCheckoutActivity : AppCompatActivity(), CFCheckoutResponseCallback
 
         try {
             CFPaymentGatewayService.getInstance().setCheckoutCallback(this)
-            val session = CFSessionBuilder()
+            val session: CFSession = CFSessionBuilder()
                 .setEnvironment(CFSession.Environment.SANDBOX)
                 .setPaymentSessionID(sessionId)
                 .setOrderId(orderId)
                 .build()
-            val theme = CFWebCheckoutThemeBuilder()
+            val theme = CFThemeBuilder()
                 .setNavigationBarBackgroundColor("#101820")
                 .setNavigationBarTextColor("#FFFFFF")
+                .setButtonBackgroundColor("#2563EB")
+                .setButtonTextColor("#FFFFFF")
+                .setPrimaryTextColor("#111827")
+                .setSecondaryTextColor("#4B5563")
                 .build()
-            val checkout = CFWebCheckoutPaymentBuilder()
+            val checkout = CFDropCheckoutPaymentBuilder()
                 .setSession(session)
-                .setCFWebCheckoutUITheme(theme)
+                .setCFNativeCheckoutUITheme(theme)
                 .build()
             CFPaymentGatewayService.getInstance().doPayment(this, checkout)
         } catch (e: CFException) {
