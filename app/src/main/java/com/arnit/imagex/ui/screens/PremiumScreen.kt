@@ -83,6 +83,7 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
             val intent = Intent(context, CashfreeCheckoutActivity::class.java)
                 .putExtra(CashfreeCheckoutActivity.EXTRA_ORDER_ID, order.orderId)
                 .putExtra(CashfreeCheckoutActivity.EXTRA_SESSION_ID, order.paymentSessionId)
+                .putExtra(CashfreeCheckoutActivity.EXTRA_ENVIRONMENT, order.environment.lowercase())
             checkoutLauncher.launch(intent)
         }
     }
@@ -163,7 +164,7 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
                     cashfreeAvailable = true
                 )
                 OutlinedTextField(value = phoneNumber, onValueChange = { phoneNumber = it }, label = { Text("Phone number for payment") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                Text("Cashfree Sandbox checkout. Payment is activated only after server verification.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Cashfree checkout (${if (cashfreeOrder?.environment == "production") "Production" else "Sandbox"}). Payment is activated only after server verification.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 cashfreeMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
                 if (cashfreeBusy) Text("Processing…", style = MaterialTheme.typography.bodyMedium)
                 billingState.products.forEach { product ->
