@@ -1,5 +1,11 @@
 package com.arnit.imagex.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.OutlinedTextField
+import com.arnit.imagex.payment.CashfreeCheckoutActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -56,7 +62,27 @@ private val PremiumDark = Color(0xFF15132C)
 fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
     val isPremium by vm.isPremium.collectAsState()
     val billingState by vm.billingState.collectAsState()
-    var selectedPayment by remember { mutableStateOf(PremiumPaymentMethod.GOOGLE_PLAY) }
+    var selectedPayment by remember { mutableStateOf(PremiumPaymentMethod.CASHFREE) }
+    var phoneNumber by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val cashfreeOrder by vm.cashfreeOrder.collectAsState()
+    val cashfreeBusy by vm.cashfreeBusy.collectAsState()
+    val cashfreeMessage by vm.cashfreeMessage.collectAsState()
+    val checkoutLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val data = result.data
+        val orderId = data?.getStringExtra(CashfreeCheckoutActivity.EXTRA_ORDER_ID).orEmpty()
+        val status = data?.getStringExtra(CashfreeCheckoutActivity.EXTRA_RESULT).orEmpty()
+        if (status == CashfreeCheckoutActivity.RESULT_VERIFY && orderId.isNotBlank()) vm.verifyCashfreePayment(orderId)
+        else if (status == CashfreeCheckoutActivity.RESULT_FAILURE) vm.clearCashfreeOrder()
+    }
+    androidx.compose.runtime.LaunchedEffect(cashfreeOrder) {
+        cashfreeOrder?.let { order ->
+            val intent = Intent(context, CashfreeCheckoutActivity::class.java)
+                .putExtra(CashfreeCheckoutActivity.EXTRA_ORDER_ID, order.orderId)
+                .putExtra(CashfreeCheckoutActivity.EXTRA_SESSION_ID, order.paymentSessionId)
+            checkoutLauncher.launch(intent)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -131,13 +157,16 @@ fun PremiumScreen(vm: AppViewModel, onBack: () -> Unit) {
                     selected = selectedPayment,
                     onSelect = { selectedPayment = it },
                     googlePlayAvailable = false,
-                    cashfreeAvailable = false
+                    cashfreeAvailable = true
                 )
-                Text(
-                    "Google Play and Cashfree are shown as planned options. Checkout is not yet enabled here.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                OutlinedTextField(value = phoneNumber, onValueChange = { phoneNumber = it }, label = { Text("Phone number for payment") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                Text("Cashfree Sandbox checkout. Payment is activated only after server verification.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                cashfreeMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+                if (cashfreeBusy) Text("Processing…", style = MaterialTheme.typography.bodyMedium)
+                billingState.products.forEach { product ->
+                    GradientButton(text = "Pay with Cashfree • " + product.plan.displayName, onClick = { vm.createCashfreeOrder(product.plan, phoneNumber) }, enabled = !cashfreeBusy && selectedPayment == PremiumPaymentMethod.CASHFREE)
+                }
+                OutlinedButton(onClick = { vm.refreshServerPremiumStatus() }, enabled = !cashfreeBusy) { Text("Refresh membership status") }
             }
 
             SectionCard(title = "Free vs Premium limits") {
