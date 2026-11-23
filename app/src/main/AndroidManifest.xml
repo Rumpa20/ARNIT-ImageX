@@ -14,7 +14,7 @@
         <activity
             android:name=".payment.CashfreeCheckoutActivity"
             android:exported="false"
-            android:theme="@style/Theme.ARNITImageX" />
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
         <activity
             android:name=".MainActivity"
